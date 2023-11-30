@@ -89,7 +89,7 @@ def downloadME(
             results = [downloadME(**kwargs) for kwargs in download_kwargs]
         else:
             with concurrent.futures.ThreadPoolExecutor(max_workers=max(1,min(threads,len(download_kwargs)))) as executor:
-                results = executor.map(lambda kwargs: downloadME(**kwargs),download_kwargs)
+                results = executor.map(lambda kwargs: downloadME(**kwargs), download_kwargs)
             
         return [res for res in results]
     
