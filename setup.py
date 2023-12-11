@@ -13,7 +13,6 @@ setup(
     install_requires = [
         "dill",
         "numpy",
-        "threading",
         "requests",
         "boto3",
         "pycognito"

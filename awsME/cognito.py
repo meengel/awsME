@@ -4,7 +4,7 @@ from pycognito.exceptions import SoftwareTokenMFAChallengeException
 
 from pycognito.utils import RequestsSrpAuth, TokenType
 
-from downloadME import downloadME
+from .downloadME import downloadME
 import os
 
 def login(user_pool_id, client_id, user_pool_region, username, password):

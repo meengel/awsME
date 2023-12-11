@@ -1,1 +1,2 @@
-import .src as awsME
+import .awsME as awsME
+from .awsME import *
