@@ -7,4 +7,4 @@ The package features multithreaded up- and download of small files. In contrast 
 Additionally, it provides a multithreaded downloading functionality for signing requests with authorization headers. That is of particular interst for AWS API Gateways secured by some Authorizer. For now, it supports SRP, MFA and API-keys for AWS Cognito user pools. Here, the user can choose a chunksize for downloading as well.
 
 ## Installation
-Currently, we did not provide the package via pip or conda. You may install it with `pip install -e /PATH/TO/GEM-ML`.
+Currently, we did not provide the package via pip or conda. You may install it with `pip install -e /PATH/TO/awsME`.
