@@ -72,7 +72,9 @@ def cognitoDownload(
     chunked = False, # chunk-size in Byte
     AuthorizationKey = "Authorization",
     APIkeyKey = "X-API-Key",
-    tokentype = TokenType.ID_TOKEN
+    tokentype = TokenType.ID_TOKEN,
+    
+    **retrievekwargs
 ):
     # format input
     if isinstance(urls,list):
@@ -92,7 +94,7 @@ def cognitoDownload(
     # get authentification callable and determine corresponding parameters for downloadME
     auth = getAuth(cognito, headerkey=AuthorizationKey, tokentype=tokentype)
     
-    retrievekwargs = {"auth":auth}
+    retrievekwargs.update(auth=auth)
     if APIkey:
         retrievekwargs.update(headers={APIkeyKey:APIkey})
     
