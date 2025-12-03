@@ -10,7 +10,7 @@ thread_local_awsME = threading.local()
 
 #%% main methods
 #%%% upload files
-def upload(file,bucket,savename=None,region="eu-central-1",AWS_ACCESS_KEY_ID=None,AWS_SECRET_ACCESS_KEY=None,bequiet=True,threads=10,max_bandwidth=None,smallfiles=False):
+def upload(file,bucket,savename=None,region="eu-central-1",AWS_ACCESS_KEY_ID=None,AWS_SECRET_ACCESS_KEY=None,endpoint_url=None,bequiet=True,threads=10,max_bandwidth=None,smallfiles=False):
     #%%%% parse input
     #%%%%% list of files
     if type(file)==list:
@@ -40,7 +40,7 @@ def upload(file,bucket,savename=None,region="eu-central-1",AWS_ACCESS_KEY_ID=Non
         
         #%%%%%% query
         if smallfiles:
-            upload_args = [(file_,bucket_,savename_,region_,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,bequiet,threads,max_bandwidth,smallfiles) for file_,bucket_,savename_,region_ in zip(file,bucket,savename,region)]
+            upload_args = [(file_,bucket_,savename_,region_,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,endpoint_url,bequiet,threads,max_bandwidth,smallfiles) for file_,bucket_,savename_,region_ in zip(file,bucket,savename,region)]
             
             if not bequiet:
                 global ProgressBar
@@ -81,7 +81,7 @@ def upload(file,bucket,savename=None,region="eu-central-1",AWS_ACCESS_KEY_ID=Non
     config = TransferConfig(multipart_threshold=8388608, max_concurrency=max(1,threads) if not smallfiles else 1, multipart_chunksize=8388608, num_download_attempts=5, max_io_queue=100, io_chunksize=262144, use_threads=False if threads<=1 or smallfiles else True, max_bandwidth=max_bandwidth)
         
     #%%%% client
-    s3client = getME_s3client(region=region, AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY)
+    s3client = getME_s3client(region=region, AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY, endpoint_url=endpoint_url)
     
     #%%%% check if bucket exists
     response = s3client.list_buckets()
@@ -110,7 +110,7 @@ def upload(file,bucket,savename=None,region="eu-central-1",AWS_ACCESS_KEY_ID=Non
 
 #%%% download
 def download(file, bucket, savename=None, region="eu-central-1",
-             AWS_ACCESS_KEY_ID=None, AWS_SECRET_ACCESS_KEY=None, 
+             AWS_ACCESS_KEY_ID=None, AWS_SECRET_ACCESS_KEY=None, endpoint_url=None,
              bequiet=True, threads=0, RequestPayer="requester", maxtries=3, max_bandwidth=None, smallfiles=False):
     #%%%% parse input
     #%%%%% list of files
@@ -149,6 +149,7 @@ def download(file, bucket, savename=None, region="eu-central-1",
                 "region": region_,
                 "AWS_ACCESS_KEY_ID": AWS_ACCESS_KEY_ID,
                 "AWS_SECRET_ACCESS_KEY": AWS_SECRET_ACCESS_KEY, 
+                "endpoint_url": endpoint_url,
                 "bequiet": bequiet, 
                 "threads": threads if not smallfiles else 0, 
                 "RequestPayer": RequestPayer,
@@ -187,7 +188,7 @@ def download(file, bucket, savename=None, region="eu-central-1",
         return False
         
     #%%%% client
-    s3client = getME_s3client(region=region, AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY)
+    s3client = getME_s3client(region=region, AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY, endpoint_url=endpoint_url)
     
     #%%%% config
     transferConfig = TransferConfig(multipart_threshold=8388608, max_concurrency=max(1, threads) if not smallfiles else 1, multipart_chunksize=8388608, num_download_attempts=maxtries, max_io_queue=100, io_chunksize=262144, use_threads=False if threads<=1 or smallfiles else True, max_bandwidth=max_bandwidth)
@@ -205,25 +206,30 @@ def download(file, bucket, savename=None, region="eu-central-1",
             response = s3client.download_file(bucket, file, savename, Config=transferConfig, ExtraArgs={"RequestPayer":RequestPayer})
     except Exception as e:
         print(e)
-        print(response)
+        try:
+            print(response)
+        except Exception as e:
+            print(e)
+            return False
         return False
     return True
 
 #%%% get client
-def getME_s3client(region, AWS_ACCESS_KEY_ID=None, AWS_SECRET_ACCESS_KEY=None):
+def getME_s3client(region, AWS_ACCESS_KEY_ID=None, AWS_SECRET_ACCESS_KEY=None, endpoint_url=None):
     if not hasattr(thread_local_awsME,'s3client'):
         session = boto3.session.Session() # thread-safe!
         thread_local_awsME.s3client = session.client(service_name='s3',
                                                      region_name=region,
                                                      aws_access_key_id=AWS_ACCESS_KEY_ID,
                                                      aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                                     aws_session_token=None)
+                                                     # aws_session_token=None,
+                                                     endpoint_url=endpoint_url)
     return thread_local_awsME.s3client
 
 #%%% create new bucket
-def create_bucket(bucket_name, region="eu-central-1", AWS_ACCESS_KEY_ID=None, AWS_SECRET_ACCESS_KEY=None):
+def create_bucket(bucket_name, region="eu-central-1", AWS_ACCESS_KEY_ID=None, AWS_SECRET_ACCESS_KEY=None, endpoint_url=None):
     try:
-        s3client = getME_s3client(region=region, AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY)
+        s3client = getME_s3client(region=region, AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY, endpoint_url=endpoint_url)
         s3client.create_bucket(Bucket=bucket_name)
     except Exception as e:
         print(e)
